@@ -1,0 +1,46 @@
+{
+  "name": "@spacemeshos/ledger-sdk",
+  "version": "0.0.1",
+  "files": [
+    "lib"
+  ],
+  "description": "Ledger Hardware Wallet Spacemesh SMH API",
+  "main": "lib/Ada.js",
+  "repository": "github:spacemeshos/ledger-sdk",
+  "keywords": [
+    "Ledger",
+    "LedgerWallet",
+    "SMH",
+    "Spacemesh",
+    "NanoS",
+    "NanoX",
+    "Hardware",
+    "Wallet"
+  ],
+  "author": "Spacemesh <authors@spacemesh.io>",
+  "license": "GPL",
+  "dependencies": {
+    "@ledgerhq/hw-transport": "^5.12.0",
+    "babel-polyfill": "^6.26.0",
+    "babel-runtime": "^6.26.0",
+    "node-int64": "^0.4.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.8.4",
+    "@babel/core": "^7.9.0",
+    "@babel/plugin-transform-runtime": "^7.9.0",
+    "@babel/preset-env": "^7.9.0",
+    "@babel/preset-flow": "^7.9.0",
+    "@ledgerhq/hw-transport-node-hid": "^5.12.0"
+  },
+  "bugs": {
+    "url": "https://github.com/spacemeshos/ledger-sdk/issues"
+  },
+  "homepage": "https://github.com/spacemeshos/ledger-sdk",
+  "scripts": {
+    "clean": "rm -rf lib/ flow-typed/",
+    "build": "babel --source-maps -d lib src --copy-files",
+    "prepublish": "yarn run clean && yarn run build",
+    "build-example": "babel --source-maps -d example-node/lib example-node/src"
+  }
+}
