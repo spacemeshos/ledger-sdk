@@ -54,17 +54,10 @@ export type GetExtendedPublicKeyResponse = {|
   chainCodeHex: string
 |};
 
-export type Witness = {|
-  path: BIP32Path,
-  // Note: this is *only* a signature
-  // you need to add proper extended public key
-  // to form a full witness
-  witnessSignatureHex: string
-|};
-
 export type SignTransactionResponse = {|
-  txHashHex: string,
-  signature: string
+  tx: string,
+  signature: string,
+  pubKey: string
 |};
 
 // It can happen that we try to send a message to the device
@@ -180,10 +173,14 @@ export default class Smesh {
         utils.stripRetcodeFromResponse
       );
 
+    console.log(path);
+
     const P1_UNUSED = 0x00;
     const P2_UNUSED = 0x00;
 
     const data = utils.path_to_buf(path);
+
+    console.log(data);
 
     const response = await wrapRetryStillInCall(_send)(
       P1_UNUSED,
@@ -262,11 +259,7 @@ export default class Smesh {
       utils.hex_to_buf(tx)
     ]);
 
-    const response = await wrapRetryStillInCall(_send)(
-      P1_UNUSED,
-      P2_UNUSED,
-      data
-    );
+    const response = await _send(P1_UNUSED, P2_UNUSED, data);
 
     const [signature, pubKey, rest] = utils.chunkBy(response, [64, 32]);
     Assert.assert(rest.length == 0);

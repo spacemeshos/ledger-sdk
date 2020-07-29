@@ -20,6 +20,9 @@ export const Precondition = {
   },
 
   // Extended checks
+  checkIsUint64: (data: any) => {
+    Precondition.checkIsInteger(data);
+  },
   checkIsUint32: (data: any) => {
     Precondition.checkIsInteger(data);
     Precondition.check(data >= 0);
@@ -59,6 +62,28 @@ export const Assert = {
     if (!cond) throw new Error("Assertion failed");
   }
 };
+
+export function uint32_to_buf(value: number): Buffer {
+  Precondition.checkIsUint32(value);
+
+  const data = Buffer.alloc(4);
+  data.writeUInt32BE(value, 0);
+  return data;
+}
+
+export function uint64_to_buf(value: number): Buffer {
+  Precondition.checkIsUint64(value);
+
+  const data = Buffer.alloc(8);
+  data.writeBigUInt64BE(BigInt(value), 0);
+  return data;
+}
+
+export function buf_to_uint32(data: Buffer): number {
+  Precondition.check(data.length == 4);
+
+  return data.readUIntBE(0, 4);
+}
 
 export function uint8_to_buf(value: number): Buffer {
   Precondition.checkIsUint8(value);
@@ -148,11 +173,44 @@ export function amount_to_buf(amount: string): Buffer {
   return Buffer.concat([padding, data]);
 }
 
+function safe_parseInt(str: string): number {
+  Precondition.checkIsString(str);
+  const i = parseInt(str);
+  // Check that we parsed everything
+  Precondition.check("" + i == str);
+  // Could be invalid
+  Precondition.check(!isNaN(i));
+  // Could still be float
+  Precondition.checkIsInteger(i);
+  return i;
+}
+
+function parseBIP32Index(str: string): number {
+  let base = 0;
+  if (str.endsWith("'")) {
+    str = str.slice(0, -1);
+    base = HARDENED;
+  }
+  const i = safe_parseInt(str);
+  Precondition.check(i >= 0);
+  Precondition.check(i < HARDENED);
+  return base + i;
+}
+
+export function str_to_path(data: string): Array<number> {
+  Precondition.checkIsString(data);
+  Precondition.check(data.length > 0);
+
+  return data.split("/").map(parseBIP32Index);
+}
+
 export default {
   HARDENED,
 
   hex_to_buf,
   buf_to_hex,
+
+  uint64_to_buf,
 
   uint32_to_buf,
   buf_to_uint32,
@@ -167,5 +225,7 @@ export default {
   buf_to_amount,
 
   chunkBy,
-  stripRetcodeFromResponse
+  stripRetcodeFromResponse,
+
+  str_to_path
 };
