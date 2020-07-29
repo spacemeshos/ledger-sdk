@@ -39,11 +39,11 @@ const makeExamples = appSmesh => ({
     console.log("signTx");
     const tx = Buffer.concat([
       utils.uint8_to_buf(1), // type
-      utils.uint32_to_buf(0), utils.uint32_to_buf(1), // nonce
+      utils.uint64_to_buf(1), // nonce
       utils.hex_to_buf("0000000000000000000000000000000000000000"), // recepient
-      utils.uint32_to_buf(0), utils.uint32_to_buf(1000000), // gas limit
-      utils.uint32_to_buf(0), utils.uint32_to_buf(1000), // gas price
-      utils.uint32_to_buf(0xE8), utils.uint32_to_buf(0xD4A51000) // amount
+      utils.uint64_to_buf(1000000), // gas limit
+      utils.uint64_to_buf(1000), // gas price
+      utils.uint64_to_buf(1000000000000) // amount
     ]);
     console.log(
       await appSmesh.signTx(utils.str_to_path("44'/540'/0'/0/0'"), tx.toString("hex"))
