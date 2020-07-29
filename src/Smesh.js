@@ -218,7 +218,7 @@ export default class Smesh {
     Precondition.checkIsValidPath(path);
 
     const _send = (p1, p2, data) =>
-      this.send(CLA, INS.DERIVE_ADDRESS, p1, p2, data).then(
+      this.send(CLA, INS.GET_ADDRESS, p1, p2, data).then(
         utils.stripRetcodeFromResponse
       );
 
@@ -236,7 +236,7 @@ export default class Smesh {
     Precondition.checkIsValidPath(path);
 
     const _send = (p1, p2, data) =>
-      this.send(CLA, INS.DERIVE_ADDRESS, p1, p2, data).then(
+      this.send(CLA, INS.GET_ADDRESS, p1, p2, data).then(
         utils.stripRetcodeFromResponse
       );
 
@@ -245,6 +245,37 @@ export default class Smesh {
     const data = utils.path_to_buf(path);
     const response = await _send(P1_DISPLAY, P2_UNUSED, data);
     Assert.assert(response.length == 0);
+  }
+
+  async signTx(path: BIP32Path, tx: string): Promise<void> {
+    Precondition.checkIsValidPath(path);
+
+    const _send = (p1, p2, data) =>
+      this.send(CLA, INS.SIGN_TX, p1, p2, data).then(
+        utils.stripRetcodeFromResponse
+      );
+
+    const P1_UNUSED = 0x00;
+    const P2_UNUSED = 0x00;
+    const data = Buffer.concat([
+      utils.path_to_buf(path),
+      utils.hex_to_buf(tx)
+    ]);
+
+    const response = await wrapRetryStillInCall(_send)(
+      P1_UNUSED,
+      P2_UNUSED,
+      data
+    );
+
+    const [signature, pubKey, rest] = utils.chunkBy(response, [64, 32]);
+    Assert.assert(rest.length == 0);
+
+    return {
+      tx,
+      signature: signature.toString("hex"),
+      pubKey: pubKey.toString("hex")
+    };
   }
 }
 
