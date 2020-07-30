@@ -60,10 +60,10 @@ async function example() {
   const examples = makeExamples(appSmesh);
 
   try {
-//      await examples.getVersion();
-//      await examples.getExtendedPublicKey();
-//      await examples.getAddress();
-//      await examples.showAddress();
+      await examples.getVersion();
+      await examples.getExtendedPublicKey();
+      await examples.getAddress();
+      await examples.showAddress();
       await examples.signTx();
   } catch (error) {
     console.log(error);
