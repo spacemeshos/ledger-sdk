@@ -22,6 +22,7 @@ import { TransportStatusError } from "@ledgerhq/hw-transport";
 import utils, { Precondition, Assert } from "./utils";
 
 const CLA = 0x30;
+const MAX_PACKET_LENGTH = 240;
 
 const INS = {
   GET_VERSION: 0x00,
@@ -244,7 +245,7 @@ export default class Smesh {
     Assert.assert(response.length == 0);
   }
 
-  async signTx(path: BIP32Path, tx: string): Promise<void> {
+  async signTx(path: BIP32Path, tx: Buffer): Promise<void> {
     Precondition.checkIsValidPath(path);
 
     const _send = (p1, p2, data) =>
@@ -252,14 +253,40 @@ export default class Smesh {
         utils.stripRetcodeFromResponse
       );
 
-    const P1_UNUSED = 0x00;
+    const P1_HAS_HEADER  = 0x01;
+    const P1_HAS_DATA    = 0x02;
+    const P1_IS_LAST     = 0x04;
     const P2_UNUSED = 0x00;
+
+    let response = null;
+
     const data = Buffer.concat([
       utils.path_to_buf(path),
-      utils.hex_to_buf(tx)
+      tx
     ]);
 
-    const response = await _send(P1_UNUSED, P2_UNUSED, data);
+    if (data.length <= MAX_PACKET_LENGTH) {
+      response = await _send(P1_HAS_HEADER | P1_HAS_DATA | P1_IS_LAST, P2_UNUSED, data);
+    } else {
+      let dataSize = data.length;
+      let chunkSize = MAX_PACKET_LENGTH;
+      let offset = 0;
+      // Send tx header + tx data
+      response = await _send(P1_HAS_HEADER | P1_HAS_DATA, P2_UNUSED, data.slice(offset, chunkSize));
+      Assert.assert(response.length == 0);
+      dataSize -= chunkSize;
+      offset += chunkSize;
+      // Send tx data
+      while (dataSize > MAX_PACKET_LENGTH) {
+        response = await _send(P1_HAS_DATA, P2_UNUSED, data.slice(offset, chunkSize));
+        Assert.assert(response.length == 0);
+        dataSize -= chunkSize;
+        offset += chunkSize;
+      }
+      response = await _send(P1_HAS_DATA | P1_IS_LAST, P2_UNUSED, data.slice(offset, dataSize));
+    }
+
+    Assert.assert(response !== null);
 
     const [signature, pubKey, rest] = utils.chunkBy(response, [64, 32]);
     Assert.assert(rest.length == 0);
