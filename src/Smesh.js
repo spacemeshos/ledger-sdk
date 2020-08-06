@@ -56,9 +56,9 @@ export type GetExtendedPublicKeyResponse = {|
 |};
 
 export type SignTransactionResponse = {|
-  tx: string,
-  signature: string,
-  pubKey: string
+  tx: Buffer,
+  signature: Buffer,
+  pubKey: Buffer
 |};
 
 // It can happen that we try to send a message to the device
@@ -159,6 +159,10 @@ export default class Smesh {
    * @param {BIP32Path} indexes The path indexes. Path must begin with `44'/540'/n'`, and shuld be 5 indexes long.
    * @return {Promise<GetExtendedPublicKeyResponse>} The public key with chaincode for the given path.
    *
+   * @throws 0x6E07 - Some part of request data is invalid
+   * @throws 0x6E09 - User rejected the action
+   * @throws 0x6E11 - Pin screen
+   *
    * @example
    * const { publicKey, chainCode } = await smesh.getExtendedPublicKey([ HARDENED + 44, HARDENED + 540, HARDENED + 1 ]);
    * console.log(publicKey);
@@ -204,9 +208,9 @@ export default class Smesh {
    * @param {BIP32Path} indexes The path indexes. Path must begin with `44'/540'/0'/0/i`
    * @return {Promise<GetAddressResponse>} The address for the given path.
    *
-   * @throws 5001 - The path provided does not have the first 3 indexes hardened or 4th index is not 0
-   * @throws 5002 - The path provided is less than 5 indexes
-   * @throws 5003 - Some of the indexes is not a number
+   * @throws 0x6E07 - Some part of request data is invalid
+   * @throws 0x6E09 - User rejected the action
+   * @throws 0x6E11 - Pin screen
    *
    * @example
    * const { address } = await smesh.getAddress([ HARDENED + 44, HARDENED + 540, HARDENED + 0, 0, 2 ]);
@@ -230,6 +234,19 @@ export default class Smesh {
     };
   }
 
+  /**
+   * @description Show an address from the specified BIP 32 path for verify.
+   *
+   * @param {BIP32Path} indexes The path indexes. Path must begin with `44'/540'/0'/0/i`
+   * @return {Promise<void>} No return.
+   *
+   * @throws 0x6E07 - Some part of request data is invalid
+   * @throws 0x6E11 - Pin screen
+   *
+   * @example
+   * await smesh.showAddress([ HARDENED + 44, HARDENED + 540, HARDENED + 0, 0, HARDENED + 2 ]);
+   *
+   */
   async showAddress(path: BIP32Path): Promise<void> {
     Precondition.checkIsValidPath(path);
 
@@ -245,7 +262,24 @@ export default class Smesh {
     Assert.assert(response.length == 0);
   }
 
-  async signTx(path: BIP32Path, tx: Buffer): Promise<void> {
+  /**
+   * @description Sign an transaction by the specified BIP 32 path account address.
+   *
+   * @param {BIP32Path} indexes The path indexes. Path must begin with `44'/540'/0'/0/i`
+   * @param {Buffer} tx The XDR encoded transaction data, include transaction type
+   * @return {Promise<SignTransactionResponse>} The transaction data, the transaction signature and the corresponded public key.
+   *
+   * @throws 0x6E05 - P1, P2 or payload is invalid
+   * @throws 0x6E06 - Request is not valid in the context of previous calls
+   * @throws 0x6E07 - Some part of request data is invalid
+   * @throws 0x6E09 - User rejected the action
+   * @throws 0x6E11 - Pin screen
+   *
+   * @example
+   * const { signature } = await smesh.signTx([ HARDENED + 44, HARDENED + 540, HARDENED + 0, 0, 2 ], txData);
+   *
+   */
+  async signTx(path: BIP32Path, tx: Buffer): Promise<SignTransactionResponse> {
     Precondition.checkIsValidPath(path);
 
     const _send = (p1, p2, data) =>
@@ -293,8 +327,8 @@ export default class Smesh {
 
     return {
       tx,
-      signature: signature.toString("hex"),
-      pubKey: pubKey.toString("hex")
+      signature,
+      pubKey
     };
   }
 }
