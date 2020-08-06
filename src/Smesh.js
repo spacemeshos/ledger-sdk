@@ -55,12 +55,6 @@ export type GetExtendedPublicKeyResponse = {|
   chainCodeHex: string
 |};
 
-export type SignTransactionResponse = {|
-  tx: Buffer,
-  signature: Buffer,
-  pubKey: Buffer
-|};
-
 // It can happen that we try to send a message to the device
 // when the device thinks it is still in a middle of previous ADPU stream.
 // This happens mostly if host does abort communication for some reason
@@ -267,7 +261,7 @@ export default class Smesh {
    *
    * @param {BIP32Path} indexes The path indexes. Path must begin with `44'/540'/0'/0/i`
    * @param {Buffer} tx The XDR encoded transaction data, include transaction type
-   * @return {Promise<SignTransactionResponse>} The transaction data, the transaction signature and the corresponded public key.
+   * @return {Promise<Buffer>} Signed transaction.
    *
    * @throws 0x6E05 - P1, P2 or payload is invalid
    * @throws 0x6E06 - Request is not valid in the context of previous calls
@@ -325,11 +319,7 @@ export default class Smesh {
     const [signature, pubKey, rest] = utils.chunkBy(response, [64, 32]);
     Assert.assert(rest.length == 0);
 
-    return {
-      tx,
-      signature,
-      pubKey
-    };
+    return Buffer.concat([tx.slice(0, 1), signature, tx.slice(1)]);
   }
 }
 
