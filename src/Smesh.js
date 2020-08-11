@@ -47,32 +47,13 @@ export type GetVersionResponse = {|
 |};
 
 export type GetAddressResponse = {|
-  address: string
+  address: Buffer
 |};
 
 export type GetExtendedPublicKeyResponse = {|
-  publicKeyHex: string,
-  chainCodeHex: string
+  publicKey: Buffer,
+  chainCode: Buffer
 |};
-
-// It can happen that we try to send a message to the device
-// when the device thinks it is still in a middle of previous ADPU stream.
-// This happens mostly if host does abort communication for some reason
-// leaving ledger mid-call.
-// In this case Ledger will respond by ERR_STILL_IN_CALL *and* resetting its state to
-// default. We can therefore transparently retry the request.
-// Note though that only the *first* request in an multi-APDU exchange should be retried.
-const wrapRetryStillInCall = fn => async (...args: any) => {
-  try {
-    return await fn(...args);
-  } catch (e) {
-    if (e && e.statusCode && e.statusCode === ErrorCodes.ERR_STILL_IN_CALL) {
-      // Do the retry
-      return await fn(...args);
-    }
-    throw e;
-  }
-};
 
 const wrapConvertError = fn => async (...args) => {
   try {
@@ -106,7 +87,7 @@ export default class Smesh {
     this.methods = [
       "getVersion",
       "getExtendedPublicKey",
-      "signTransaction",
+      "signTx",
       "getAddress",
       "showAddress"
     ];
@@ -131,11 +112,7 @@ export default class Smesh {
       );
     const P1_UNUSED = 0x00;
     const P2_UNUSED = 0x00;
-    const response = await wrapRetryStillInCall(_send)(
-      P1_UNUSED,
-      P2_UNUSED,
-      utils.hex_to_buf("")
-    );
+    const response = await _send(P1_UNUSED, P2_UNUSED, utils.hex_to_buf(""));
     Assert.assert(response.length == 4);
     const [major, minor, patch, flags_value] = response;
 
@@ -181,18 +158,14 @@ export default class Smesh {
 
     console.log(data);
 
-    const response = await wrapRetryStillInCall(_send)(
-      P1_UNUSED,
-      P2_UNUSED,
-      data
-    );
+    const response = await _send(P1_UNUSED, P2_UNUSED, data);
 
-    const [publicKey, chainCode, rest] = utils.chunkBy(response, [32, 32]);
+    const [publicKey, chainCode, privateKey, rest] = utils.chunkBy(response, [32, 32, 64]);
     Assert.assert(rest.length == 0);
 
     return {
-      publicKeyHex: publicKey.toString("hex"),
-      chainCodeHex: chainCode.toString("hex")
+      publicKey: publicKey,
+      chainCode: chainCode
     };
   }
 
@@ -294,24 +267,24 @@ export default class Smesh {
     ]);
 
     if (data.length <= MAX_PACKET_LENGTH) {
-      response = await _send(P1_HAS_HEADER | P1_HAS_DATA | P1_IS_LAST, P2_UNUSED, data);
+      response = await _send(P1_HAS_HEADER | P1_IS_LAST, P2_UNUSED, data);
     } else {
       let dataSize = data.length;
       let chunkSize = MAX_PACKET_LENGTH;
       let offset = 0;
       // Send tx header + tx data
-      response = await _send(P1_HAS_HEADER | P1_HAS_DATA, P2_UNUSED, data.slice(offset, chunkSize));
+      response = await _send(P1_HAS_HEADER | P1_HAS_DATA, P2_UNUSED, data.slice(offset, offset + chunkSize));
       Assert.assert(response.length == 0);
       dataSize -= chunkSize;
       offset += chunkSize;
       // Send tx data
       while (dataSize > MAX_PACKET_LENGTH) {
-        response = await _send(P1_HAS_DATA, P2_UNUSED, data.slice(offset, chunkSize));
+        response = await _send(P1_HAS_DATA, P2_UNUSED, data.slice(offset, offset + chunkSize));
         Assert.assert(response.length == 0);
         dataSize -= chunkSize;
         offset += chunkSize;
       }
-      response = await _send(P1_HAS_DATA | P1_IS_LAST, P2_UNUSED, data.slice(offset, dataSize));
+      response = await _send(P1_IS_LAST, P2_UNUSED, data.slice(offset));
     }
 
     Assert.assert(response !== null);
