@@ -36,6 +36,7 @@ const makeExamples = appSmesh => ({
   signCoinTx: async () => {
     console.log("signCoinTx");
     const tx = Buffer.concat([
+      utils.hex_to_buf("0000000000000000000000000000000000000000000000000000000000000000"), // network id
       utils.uint8_to_buf(0), // // coin transaction with ed
       utils.uint64_to_buf(1), // nonce
       utils.hex_to_buf("0000000000000000000000000000000000000000"), // recepient
@@ -44,7 +45,7 @@ const makeExamples = appSmesh => ({
       utils.uint64_to_buf(1000000000000), // amount
       appSmesh.publicKey
     ]);
-    var hash = crypto.createHash('sha512').update(tx.slice(1)).digest();
+    var hash = crypto.createHash('sha512').update(tx).digest();
 
     const response = await appSmesh.signTx(utils.str_to_path("44'/540'/0'/0/0'"), tx);
     const signature = response.slice(1, 65);
@@ -56,6 +57,7 @@ const makeExamples = appSmesh => ({
   signAppTx: async () => {
     console.log("signAppTx");
     const tx = Buffer.concat([
+      utils.hex_to_buf("0000000000000000000000000000000000000000000000000000000000000000"), // network id
       utils.uint8_to_buf(2), // exec app transaction with ed
       utils.uint64_to_buf(1), // nonce
       utils.hex_to_buf("0000000000000000000000000000000000000000"), // app address
@@ -69,7 +71,7 @@ const makeExamples = appSmesh => ({
       , utils.hex_to_buf("00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000") // bin data
       , appSmesh.publicKey
     ]);
-    var hash = crypto.createHash('sha512').update(tx.slice(1)).digest(); //returns a buffer
+    var hash = crypto.createHash('sha512').update(tx).digest(); //returns a buffer
 
     const response = await appSmesh.signTx(utils.str_to_path("44'/540'/0'/0/0'"), tx);
     const signature = response.slice(1, 65);
@@ -81,6 +83,7 @@ const makeExamples = appSmesh => ({
   signSpawnTx: async () => {
     console.log("signSpawnTx");
     const tx = Buffer.concat([
+      utils.hex_to_buf("0000000000000000000000000000000000000000000000000000000000000000"), // network id
       utils.uint8_to_buf(4), // spawn app + ed
       utils.uint64_to_buf(1), // nonce
       utils.hex_to_buf("0000000000000000000000000000000000000000"), // template address
@@ -94,7 +97,7 @@ const makeExamples = appSmesh => ({
       , utils.hex_to_buf("00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000") // bin data
       , appSmesh.publicKey
     ]);
-    var hash = crypto.createHash('sha512').update(tx.slice(1)).digest(); //returns a buffer
+    var hash = crypto.createHash('sha512').update(tx).digest(); //returns a buffer
 
     const response = await appSmesh.signTx(utils.str_to_path("44'/540'/0'/0/0'"), tx);
     const signature = response.slice(1, 65);
