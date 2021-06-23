@@ -19,11 +19,14 @@
   ],
   "author": "Spacemesh <authors@spacemesh.io>",
   "license": "GPL",
+  "engines": {
+    "node": ">=14.0"
+  },
   "dependencies": {
     "@ledgerhq/hw-transport": "^5.12.0",
     "babel-polyfill": "^6.26.0",
     "babel-runtime": "^6.26.0",
-    "ed25519": "0.0.4",
+    "ed25519": "0.0.5",
     "node-int64": "^0.4.0"
   },
   "devDependencies": {
