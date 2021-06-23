@@ -42,7 +42,7 @@
   },
   "homepage": "https://github.com/spacemeshos/ledger-sdk",
   "scripts": {
-    "clean": "rm -rf lib/ flow-typed/",
+    "clean": "(rm -rf lib/ flow-typed/ || del /F /S /Q lib flow-typed)",
     "build": "babel --source-maps -d lib src --copy-files",
     "prepublish": "yarn run clean && yarn run build",
     "build-example": "babel --source-maps -d example-node/lib example-node/src"
