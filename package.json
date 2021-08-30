@@ -23,7 +23,7 @@
     "node": ">=14.0"
   },
   "dependencies": {
-    "@ledgerhq/hw-transport": "^5.12.0",
+    "@ledgerhq/hw-transport": "^5.50.0",
     "babel-polyfill": "^6.26.0",
     "babel-runtime": "^6.26.0",
     "ed25519": "0.0.5",
@@ -35,14 +35,14 @@
     "@babel/plugin-transform-runtime": "^7.9.0",
     "@babel/preset-env": "^7.9.0",
     "@babel/preset-flow": "^7.9.0",
-    "@ledgerhq/hw-transport-node-hid": "^5.12.0"
+    "@ledgerhq/hw-transport-node-hid": "^5.50.0"
   },
   "bugs": {
     "url": "https://github.com/spacemeshos/ledger-sdk/issues"
   },
   "homepage": "https://github.com/spacemeshos/ledger-sdk",
   "scripts": {
-    "clean": "(rm -rf lib/ flow-typed/ || del /F /S /Q lib flow-typed)",
+    "clean": "(rm -rf lib/ || del /F /S /Q lib)",
     "build": "babel --source-maps -d lib src --copy-files",
     "prepublish": "yarn run clean && yarn run build",
     "build-example": "babel --source-maps -d example-node/lib example-node/src"

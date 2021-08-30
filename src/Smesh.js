@@ -76,7 +76,18 @@ const wrapConvertError = fn => async (...args) => {
  */
 
 type SendFn = (number, number, number, number, Buffer) => Promise<Buffer>;
-
+/*
+const printApdu = (a1, a2, a3, a4, data) => {
+    console.log('APDU:', Buffer.concat([
+      utils.uint8_to_buf(a1),
+      utils.uint8_to_buf(a2),
+      utils.uint8_to_buf(a3),
+      utils.uint8_to_buf(a4),
+      utils.uint8_to_buf(data.length),
+      data
+    ]).toString('hex'));
+}
+*/
 export default class Smesh {
   transport: Transport<*>;
   methods: Array<string>;
@@ -112,7 +123,11 @@ export default class Smesh {
       );
     const P1_UNUSED = 0x00;
     const P2_UNUSED = 0x00;
+
+    // printApdu(CLA, INS.GET_VERSION, P1_UNUSED, P2_UNUSED, utils.hex_to_buf(""));
     const response = await _send(P1_UNUSED, P2_UNUSED, utils.hex_to_buf(""));
+    // console.log("Response:", response.toString('hex'));
+
     Assert.assert(response.length == 4);
     const [major, minor, patch, flags_value] = response;
 
@@ -149,16 +164,14 @@ export default class Smesh {
         utils.stripRetcodeFromResponse
       );
 
-    console.log(path);
-
     const P1_UNUSED = 0x00;
     const P2_UNUSED = 0x00;
 
     const data = utils.path_to_buf(path);
 
-    console.log(data);
-
+    // printApdu(CLA, INS.GET_EXT_PUBLIC_KEY, P1_UNUSED, P2_UNUSED, data);
     const response = await _send(P1_UNUSED, P2_UNUSED, data);
+    // console.log("Response:", response.toString('hex'));
 
     const [publicKey, chainCode, privateKey, rest] = utils.chunkBy(response, [32, 32, 64]);
     Assert.assert(rest.length == 0);
@@ -194,7 +207,10 @@ export default class Smesh {
     const P1_RETURN = 0x01;
     const P2_UNUSED = 0x00;
     const data = utils.path_to_buf(path);
+
+    // printApdu(CLA, INS.GET_ADDRESS, P1_RETURN, P2_UNUSED, data);
     const response = await _send(P1_RETURN, P2_UNUSED, data);
+    // console.log("Response:", response.toString('hex'));
 
     return {
       address: response
@@ -225,7 +241,10 @@ export default class Smesh {
     const P1_DISPLAY = 0x02;
     const P2_UNUSED = 0x00;
     const data = utils.path_to_buf(path);
+
+    // printApdu(CLA, INS.GET_ADDRESS, P1_DISPLAY, P2_UNUSED, data);
     const response = await _send(P1_DISPLAY, P2_UNUSED, data);
+    // console.log("Response:", response.toString('hex'));
     Assert.assert(response.length == 0);
   }
 
@@ -267,24 +286,32 @@ export default class Smesh {
     ]);
 
     if (data.length <= MAX_PACKET_LENGTH) {
+      // printApdu(CLA, INS.SIGN_TX, P1_HAS_HEADER | P1_IS_LAST, P2_UNUSED, data);
       response = await _send(P1_HAS_HEADER | P1_IS_LAST, P2_UNUSED, data);
+      // console.log("Response:", response.toString('hex'));
     } else {
       let dataSize = data.length;
       let chunkSize = MAX_PACKET_LENGTH;
       let offset = 0;
       // Send tx header + tx data
+      // printApdu(CLA, INS.SIGN_TX, P1_HAS_HEADER | P1_HAS_DATA, P2_UNUSED, data.slice(offset, offset + chunkSize));
       response = await _send(P1_HAS_HEADER | P1_HAS_DATA, P2_UNUSED, data.slice(offset, offset + chunkSize));
+      // console.log("Response:", response.toString('hex'));
       Assert.assert(response.length == 0);
       dataSize -= chunkSize;
       offset += chunkSize;
       // Send tx data
       while (dataSize > MAX_PACKET_LENGTH) {
+        // printApdu(CLA, INS.SIGN_TX, P1_HAS_DATA, P2_UNUSED, data.slice(offset, offset + chunkSize));
         response = await _send(P1_HAS_DATA, P2_UNUSED, data.slice(offset, offset + chunkSize));
+        // console.log("Response:", response.toString('hex'));
         Assert.assert(response.length == 0);
         dataSize -= chunkSize;
         offset += chunkSize;
       }
+      // printApdu(CLA, INS.SIGN_TX, P1_IS_LAST, P2_UNUSED, data.slice(offset));
       response = await _send(P1_IS_LAST, P2_UNUSED, data.slice(offset));
+      // console.log("Response:", response.toString('hex'));
     }
 
     Assert.assert(response !== null);
