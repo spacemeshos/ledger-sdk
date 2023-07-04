@@ -1,4 +1,4 @@
-# Note: this repository is no longer maintained. Please see spacemesh-sdk instead.
+# Note: this repository is no longer maintained. Please see [spacemesh-sdk](https://github.com/spacemeshos/spacemesh-sdk/) instead.
 
 # ledger-sdk
 A Javascript sdk for working with the [Spacemesh ledger app](https://github.com/spacemeshos/ledger-app).
